@@ -52,18 +52,18 @@ make KDIR="/location/to/kernel_headers/"
 ##### Loading Driver
 Assuming the driver has been successfully built in the previous step you are
 now ready to load the driver so you can begin using it. To do this you insert
-the driver's kernel object file (asynccom.ko) into the kernel.
+the driver's kernel object file (asynccom.ko) into the kernel.  asynccom.ko 
+requires usbserial.ko to be present in the kernel prior to being inserted,  
+so modprobe usbserial first if neccessary. 
 
-```
-insmod asynccom.ko
-```
 
 _You will more than likely need administrator privileges for this and
 the following commands._
 
-If no cards are present you will see the following message.
 
 ```
+modprobe usbserial
+
 insmod asynccom.ko
 
 _All driver load time options can be set in your modprobe.conf file for
@@ -234,6 +234,7 @@ dpkg-reconfigure setserial
 - OS: Linux
 - Base Installation: >= 2.6.16 (might work with a lower version)
 - Sysfs Support: >= 2.6.25
+- usbserial kernel module
 
 
 ## API Compatibility

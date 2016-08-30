@@ -65,7 +65,7 @@ static struct usb_serial_driver asynccom_device = {
 
 
 
-/* All of the above structures mushed into two lists */
+
 static struct usb_serial_driver * const serial_drivers[] = {
 	&asynccom_device,
 	NULL

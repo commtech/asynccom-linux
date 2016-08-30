@@ -18,7 +18,7 @@ The Linux [`write`](http://linux.die.net/man/3/write) is used to write data to t
 char odata[] = "Hello world!";
 unsigned bytes_written;
 
-bytes_read = write(fd, odata, sizeof(odata));
+bytes_written = write(fd, odata, sizeof(odata));
 ```
 
 ### Command Line

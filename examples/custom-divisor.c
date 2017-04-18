@@ -6,10 +6,11 @@
 int main(void)
 {
     int fd = 0;
-    
+    int divisor = 2;    
+
     fd = open("/dev/ttyUSB0", O_RDWR);
 	
-    ioctl(fd, IOCTL_ASYNCCOM_SET_DIVISOR, 2);
+    ioctl(fd, IOCTL_ASYNCCOM_SET_DIVISOR, divisor);
     close(fd);
 
     return 0;

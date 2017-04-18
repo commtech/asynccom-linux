@@ -21,7 +21,7 @@
 #ifndef ASYNCCOM_H
 #define ASYNCCOM_H
 
-#define COMMTECH_VENDOR_ID 0x18f7
+#define COMMTECH_VENDOR_ID 0x2eb0
 
 #define SYSFS_READ_WRITE_MODE 0660
 

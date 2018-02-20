@@ -19,7 +19,7 @@ install:
 	cp asynccom.rules /etc/udev/rules.d/
 	cp asynccom.ko /lib/modules/`uname -r`/kernel/drivers/char/
 	echo 'asynccom' >> /etc/modules
-	cp lib/raw/asynccom.h /usr/local/include/
+	cp lib/asynccom.h /usr/local/include/
 	depmod
 
 uninstall:

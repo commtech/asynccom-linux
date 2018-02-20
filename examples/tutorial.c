@@ -27,8 +27,7 @@ int main(void)
     file_status = fcntl(fd, F_GETFL, 0);
     fcntl(fd, F_SETFL, file_status & ~O_NDELAY);
 
-    ioctl(fd, IOCTL_ASYNCCOM_GET_CARD_TYPE, &type);
-
+    
     /* Configure serial settings, see termios documention for more details */
     tcgetattr(fd, &tios);
     tios.c_iflag = IGNBRK;

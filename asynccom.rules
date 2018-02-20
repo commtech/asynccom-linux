@@ -31,4 +31,4 @@ SUBSYSTEM=="asynccom*", MODE="0666"
 
 #Prevent Modem manager from using the Async Com.
 
-ATTRS{idVendor}=="18f7" ATTRS{idProduct}=="0031", ENV{ID_MM_DEVICE_IGNORE}="1"
+ATTRS{idVendor}=="2eb0" ATTRS{idProduct}=="0031", ENV{ID_MM_DEVICE_IGNORE}="1"

@@ -44,12 +44,28 @@ static const struct usb_device_id fastcom_id_table[] = {
 	{ USB_DEVICE(COMMTECH_VENDOR_ID, 0x0031) },							
 	{ }							
 };				
-			
+
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 4, 0)
+
+
+static struct usb_driver asynccom_driver = {
+	.name = "Async Com",
+	.probe = usb_serial_probe,
+	.disconnect = usb_serial_disconnect,
+	.id_table = fastcom_id_table,
+	};
+
+#endif
+
 static struct usb_serial_driver asynccom_device = {		
 	.driver = {						
 		.owner =	THIS_MODULE,			
 		.name =		"Async_Com",			
-	},							
+	},
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 4, 0)		
+	.usb_driver = &asynccom_driver,
+#endif					
 	.id_table =		fastcom_id_table,		
 	.num_ports =		1,				
 	.description =		"Async Com usb asynchronous serial adapter",   
@@ -452,7 +468,7 @@ void asynccom_port_set_clock(struct usb_serial_port *port, char *data)
 	msg[1] = 0x00;
 	msg[2] = 0x40;
 	msg[3] = data[0];
-    msg[4] = data[1];
+	msg[4] = data[1];
 	msg[5] = data[2];
 	msg[6] = data[3];
 
@@ -1343,5 +1359,25 @@ extern struct attribute_group port_settings_attr_group;
 
 MODULE_DEVICE_TABLE(usb, fastcom_id_table);
 
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 4, 0)
 module_usb_serial_driver(serial_drivers, fastcom_id_table);
+
+#else
+static int __init asynccom_init(void)
+	{
+		return usb_serial_register_drivers(serial_drivers, KBUILD_MODNAME, fastcom_id_table);
+	}
+
+static int __exit asynccom_exit(void)
+	{
+		usb_serial_deregister_drivers(serial_drivers);
+	}
+
+module_init(asynccom_init);
+module_exit(asynccom_exit);
+
+#endif
+
+
 MODULE_LICENSE("GPL");

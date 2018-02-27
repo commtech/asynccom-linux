@@ -191,7 +191,7 @@ void asynccom_port_set_clock(struct usb_serial_port *port, char *data);
 
 void asynccom_port_set_clock_bits(struct usb_serial_port *port, unsigned char *clock_data);
 
-#if LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 26)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 39)
 static int asynccom_ioctl(struct tty_struct *tty, unsigned int cmd, unsigned long arg);
 
 #else

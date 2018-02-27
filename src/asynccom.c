@@ -121,7 +121,7 @@ int asynccom_close(struct tty_struct *tty, struct usb_serial_port *port)
 	 payload |= port->bulk_in_buffer[1];
 	 
 	 for(i = 2; i < (payload + 2); i += 2){ //endianess 
-#if LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 26)
+#if LINUX_VERSION_CODE > KERNEL_VERSION(3, 8, 0)
 	    tty_insert_flip_char(&port->port, port->bulk_in_buffer[i+1], flag);
 		if(i <= payload)
 		     tty_insert_flip_char(&port->port, port->bulk_in_buffer[i], flag);
@@ -264,7 +264,7 @@ void asynccom_read(struct usb_serial_port *port)
 
 static void asynccom_set_termios(struct tty_struct *tty, struct usb_serial_port *port, struct ktermios *old_termios)
 {
-#if LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 26)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 7, 0)
 	struct ktermios *termios = &tty->termios;
 	unsigned int cflag = termios->c_cflag;
 #else
@@ -503,7 +503,7 @@ void asynccom_port_set_clock(struct usb_serial_port *port, char *data)
 /****************************************************************************
 *                         IOCTL                                             *
 ****************************************************************************/
-#if LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 26)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 39)
 
 static int asynccom_ioctl(struct tty_struct *tty, unsigned int cmd, unsigned long arg)
 #else
@@ -1387,12 +1387,14 @@ module_usb_serial_driver(serial_drivers, fastcom_id_table);
 #else
 static int __init asynccom_init(void)
 	{
-		return usb_serial_register_drivers(serial_drivers, KBUILD_MODNAME, fastcom_id_table);
+		usb_serial_register(&asynccom_device);
+		usb_register(&asynccom_driver);
 	}
 
 static int __exit asynccom_exit(void)
 	{
-		usb_serial_deregister_drivers(serial_drivers);
+		usb_deregister(&asynccom_driver);
+		usb_serial_deregister(&asynccom_device);
 	}
 
 module_init(asynccom_init);

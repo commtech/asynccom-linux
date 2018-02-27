@@ -195,7 +195,7 @@ void asynccom_port_set_clock_bits(struct usb_serial_port *port, unsigned char *c
 static int asynccom_ioctl(struct tty_struct *tty, unsigned int cmd, unsigned long arg);
 
 #else
-static int asynccom_ioctl(struct tty_structure *tty, struct file *file, unsigned int cmd, unsigned long arg);
+static int asynccom_ioctl(struct tty_struct *tty, struct file *file, unsigned int cmd, unsigned long arg);
 #endif
 
 void set_register(struct usb_serial_port *port, int addr, int val);

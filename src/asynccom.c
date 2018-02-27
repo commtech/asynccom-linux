@@ -26,14 +26,14 @@
 #include <linux/slab.h>
 #include <linux/tty_driver.h>
 #include <linux/tty_flip.h>
-#include "asynccom.h"
-
 #include <linux/version.h>
+#include "asynccom.h"
 #include <linux/sysfs.h>
 #include <linux/kobject.h>
 #include <linux/device.h>
 
-		
+struct attribute_group port_settings_attr_group;
+
 struct asynccom_private {
 	int sample_rate;
 	int ACR;
@@ -121,11 +121,22 @@ int asynccom_close(struct tty_struct *tty, struct usb_serial_port *port)
 	 payload |= port->bulk_in_buffer[1];
 	 
 	 for(i = 2; i < (payload + 2); i += 2){ //endianess 
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 26)
 	    tty_insert_flip_char(&port->port, port->bulk_in_buffer[i+1], flag);
 		if(i <= payload)
 		     tty_insert_flip_char(&port->port, port->bulk_in_buffer[i], flag);
 	}
 	    tty_flip_buffer_push(&port->port);
+
+#else
+
+	   tty_insert_flip_char(port->port.tty, port->bulk_in_buffer[i+1], flag);
+	   if(i <= payload)
+		     tty_insert_flip_char(port->port.tty, port->bulk_in_buffer[i], flag);
+	}
+	    tty_flip_buffer_push(port->port.tty);
+
+#endif
 	// usb_free_urb(urb);//fix this so allocation doesn't need to reoccur with every read
 	 usb_submit_urb(port->read_urb, GFP_ATOMIC);
 	// asynccom_read(port);
@@ -205,7 +216,7 @@ static int asynccom_port_probe(struct usb_serial_port *port)
 {	
 	unsigned char clock_bits[20] = BAUD9600;
 	
-	//(sysfs_create_group(&port->dev.kobj, &port_settings_attr_group)); use later for sysfs support
+	(sysfs_create_group(&port->dev.kobj, &port_settings_attr_group)); 
 		
 	set_register(port, 0x0004, 0x01);
 
@@ -253,8 +264,14 @@ void asynccom_read(struct usb_serial_port *port)
 
 static void asynccom_set_termios(struct tty_struct *tty, struct usb_serial_port *port, struct ktermios *old_termios)
 {
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 26)
 	struct ktermios *termios = &tty->termios;
 	unsigned int cflag = termios->c_cflag;
+#else
+	unsigned int cflag = tty->termios->c_cflag;
+
+#endif
+
 	int urb_value = 0;
 	unsigned char orig_lcr;
 	
@@ -486,8 +503,12 @@ void asynccom_port_set_clock(struct usb_serial_port *port, char *data)
 /****************************************************************************
 *                         IOCTL                                             *
 ****************************************************************************/
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 26)
 
 static int asynccom_ioctl(struct tty_struct *tty, unsigned int cmd, unsigned long arg)
+#else
+static int asynccom_ioctl(struct tty_struct *tty, struct file *file, unsigned int cmd, unsigned long arg)
+#endif
 {
 	struct usb_serial_port *port = tty->driver_data;
 	int error_code = 0;

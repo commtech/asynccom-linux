@@ -216,7 +216,7 @@ static int asynccom_port_probe(struct usb_serial_port *port)
 {	
 	unsigned char clock_bits[20] = BAUD9600;
 	
-	(sysfs_create_group(&port->dev.kobj, &port_settings_attr_group)); 
+	//(sysfs_create_group(&port->dev.kobj, &port_settings_attr_group)); 
 		
 	set_register(port, 0x0004, 0x01);
 

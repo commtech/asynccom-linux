@@ -233,7 +233,6 @@ dpkg-reconfigure setserial
 ## Run-time Dependencies
 - OS: Linux
 - Base Installation: >= 2.6.16 (might work with a lower version)
-- Sysfs Support: >= 2.6.25
 - usbserial kernel module
 
 

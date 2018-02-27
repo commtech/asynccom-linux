@@ -1402,3 +1402,6 @@ module_exit(asynccom_exit);
 
 
 MODULE_LICENSE("GPL");
+MODULE_VERSION("1.1.0");
+MODULE_AUTHOR("Landon Unruh <landon@fastcomproducts.com>");
+MODULE_DESCRIPTION("Driver for the Async Com series of cards from Commtech, Inc.");

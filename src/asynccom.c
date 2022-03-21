@@ -37,12 +37,12 @@ struct asynccom_private {
     int sample_rate;
     int ACR;
 };
-		
 
-static const struct usb_device_id fastcom_id_table[] = {	
-    { USB_DEVICE(COMMTECH_VENDOR_ID, 0x0031) },							
-    { }							
-};				
+
+static const struct usb_device_id fastcom_id_table[] = {
+    { USB_DEVICE(COMMTECH_VENDOR_ID, 0x0031) },
+    { }
+};
 
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 4, 0)
@@ -54,26 +54,26 @@ static struct usb_driver asynccom_driver = {
     };
 #endif
 
-static struct usb_serial_driver asynccom_device = {		
-    .driver = {						
-        .owner =	THIS_MODULE,			
-        .name =		"Async_Com",			
+static struct usb_serial_driver asynccom_device = {
+    .driver = {
+        .owner =	THIS_MODULE,
+        .name =		"Async_Com",
     },
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 4, 0)		
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 4, 0)
     .usb_driver = &asynccom_driver,
-#endif					
-    .id_table =		fastcom_id_table,		
-    .num_ports =		1,				
-    .description =		"Async Com usb asynchronous serial adapter",   
-    .write =            asynccom_write, 
-    //.probe =            asynccom_probe, 
-    .port_probe =       asynccom_port_probe, 
+#endif
+    .id_table =		fastcom_id_table,
+    .num_ports =		1,
+    .description =		"Async Com usb asynchronous serial adapter",
+    .write =            asynccom_write,
+    //.probe =            asynccom_probe,
+    .port_probe =       asynccom_port_probe,
     .port_remove =      asynccom_port_remove,
-    .open =             asynccom_open, 
-    .set_termios =      asynccom_set_termios, 
-    .ioctl       =      asynccom_ioctl,  
+    .open =             asynccom_open,
+    .set_termios =      asynccom_set_termios,
+    .ioctl       =      asynccom_ioctl,
     //.process_read_urb = asynccom_process_urb,
-}; 
+};
 
 
 
@@ -102,20 +102,20 @@ int asynccom_close(struct tty_struct *tty, struct usb_serial_port *port)
 	 usb_free_urb(urb);
  }
  */
- 
+
 static void asynccom_read_callback(struct urb *urb)
 {
     struct usb_serial_port *port;
     size_t payload;
     int i;
     char flag;
-    
+
     port = urb->context;
     flag = TTY_NORMAL;
     payload = port->bulk_in_buffer[0] << 8;
     payload |= port->bulk_in_buffer[1];
 
-    for(i = 2; i < (payload + 2); i += 2) { //endianess 
+    for(i = 2; i < (payload + 2); i += 2) { //endianess
 #if LINUX_VERSION_CODE > KERNEL_VERSION(3, 8, 0)
         tty_insert_flip_char(&port->port, port->bulk_in_buffer[i+1], flag);
         if(i <= payload)
@@ -136,7 +136,7 @@ static void asynccom_read_callback(struct urb *urb)
 
 /*static void asynccom_process_urb(struct urb *urb)
 {
-	
+
 	struct usb_serial_port *port = urb->context;
 	//char *ch = (char *)urb->transfer_buffer;
 	int i = 0;
@@ -146,16 +146,16 @@ static void asynccom_read_callback(struct urb *urb)
 	 flag = TTY_NORMAL;
 	if (!urb->actual_length)
 		return;
-	
+
 	  payload = port->bulk_in_buffer[0] << 8;
 	  payload |= port->bulk_in_buffer[1];
-	 
-	 for(i = 2; i < (payload + 2); i += 2){ //endianess 
+
+	 for(i = 2; i < (payload + 2); i += 2){ //endianess
 	    tty_insert_flip_char(&port->port, port->bulk_in_buffer[i+1], flag);
 		if(i <= payload)
 		     tty_insert_flip_char(&port->port, port->bulk_in_buffer[i], flag);
 	}
-	
+
 	tty_insert_flip_char(&port->port, 0x31, flag);
 	tty_flip_buffer_push(&port->port);
 }
@@ -172,7 +172,7 @@ int  asynccom_write(struct tty_struct *tty, struct usb_serial_port *port, const 
 
     buf = kmalloc(sizeof(char) * 500, GFP_KERNEL);
     sent = kmalloc(sizeof(int), GFP_KERNEL);
-    
+
     memset(buf, 0, 499);
     for(i = 0; i < count; i++) buf[i * 2] = user_buffer[i];
 
@@ -181,7 +181,7 @@ int  asynccom_write(struct tty_struct *tty, struct usb_serial_port *port, const 
     kfree(sent);
     return count;
 }
-	
+
 /*static int asynccom_probe(struct usb_interface *interface,
 			       const struct usb_device_id *id)
 {
@@ -191,10 +191,10 @@ int  asynccom_write(struct tty_struct *tty, struct usb_serial_port *port, const 
 */
 
 static int asynccom_port_probe(struct usb_serial_port *port)
-{	
+{
     unsigned char clock_bits[20] = BAUD9600;
 
-    //(sysfs_create_group(&port->dev.kobj, &port_settings_attr_group)); 
+    //(sysfs_create_group(&port->dev.kobj, &port_settings_attr_group));
 
     set_register(port, 0x0004, 0x01);
 
@@ -211,13 +211,13 @@ static int asynccom_port_probe(struct usb_serial_port *port)
     asynccom_port_set_clock_bits(port, clock_bits);
 
     //printk("%x\n", port->bulk_in_endpointAddress);
-    port->read_urb->complete = asynccom_read_callback; 
+    port->read_urb->complete = asynccom_read_callback;
     return 0;
 }
-					
+
 
 static int asynccom_port_remove(struct usb_serial_port *port)
-{	
+{
     usb_kill_urb(port->read_urb);
     return 0;
 }
@@ -231,7 +231,7 @@ void asynccom_read(struct usb_serial_port *port)
     urb = usb_alloc_urb(0, GFP_ATOMIC);
 
     usb_fill_bulk_urb(urb, serial->dev,
-                    usb_rcvbulkpipe(serial->dev, 82), port->bulk_in_buffer, 
+                    usb_rcvbulkpipe(serial->dev, 82), port->bulk_in_buffer,
                     512, asynccom_read_callback, port);
     usb_submit_urb(urb, GFP_ATOMIC);
 }
@@ -281,22 +281,22 @@ static void asynccom_set_termios(struct tty_struct *tty, struct usb_serial_port 
 
     /* Flow control */
     if(cflag & CRTSCTS)
-    {		
+    {
         orig_lcr = get_register(port, UART_LCR);
         set_register(port, UART_LCR, 0xbf);
         set_register(port, UART_EFR, 0xD0);
-        set_register(port, UART_LCR, orig_lcr);	
+        set_register(port, UART_LCR, orig_lcr);
     }
 
     if(!(cflag & CRTSCTS))
-    {		
+    {
         orig_lcr = get_register(port, UART_LCR);
         set_register(port, UART_LCR, 0xbf);
         set_register(port, UART_EFR, 0x00);
-        set_register(port, UART_LCR, orig_lcr);	
+        set_register(port, UART_LCR, orig_lcr);
     }
 }
-	
+
 
 void set_register(struct usb_serial_port *port, int addr, int val)
 {
@@ -315,7 +315,7 @@ void set_register(struct usb_serial_port *port, int addr, int val)
     msg[5] = (char)(val >> 8);
     msg[6] = (char)(val);
     usb_bulk_msg(serial->dev, usb_sndbulkpipe(serial->dev, 1), msg, sizeof(msg), count, HZ*10);
-    
+
     kfree(msg);
     kfree(count);
 
@@ -351,7 +351,7 @@ __u32 get_register(struct usb_serial_port *port, int addr)
 
 
 /********************************************************************************
-Functions that handle the clock and baud rate setting.  The driver will recieve 
+Functions that handle the clock and baud rate setting.  The driver will recieve
 a desired baud rate from termios, then set the clock rate to sample * desired baud
 rate using calculate_clock_bits.
 ********************************************************************************/
@@ -447,6 +447,9 @@ static int asynccom_ioctl(struct tty_struct *tty, struct file *file, unsigned in
 {
     struct usb_serial_port *port = tty->driver_data;
     int error_code = 0;
+    unsigned tmp_unsigned = 0;
+    int tmp_int = 0;
+    unsigned char tmp_clock_bits[20];
 
     switch (cmd) {
         case IOCTL_ASYNCCOM_ENABLE_RS485:
@@ -456,7 +459,8 @@ static int asynccom_ioctl(struct tty_struct *tty, struct file *file, unsigned in
             asynccom_set_rs485(port, 0);
             break;
         case IOCTL_ASYNCCOM_GET_RS485:
-            asynccom_get_rs485(port, (unsigned *)arg);
+            asynccom_get_rs485(port, &tmp_unsigned);
+            error_code = copy_to_user((void*)arg, &tmp_unsigned, sizeof(tmp_unsigned));
             break;
         case IOCTL_ASYNCCOM_ENABLE_ECHO_CANCEL:
             asynccom_enable_echo_cancel(port);
@@ -465,32 +469,40 @@ static int asynccom_ioctl(struct tty_struct *tty, struct file *file, unsigned in
             asynccom_disable_echo_cancel(port);
             break;
         case IOCTL_ASYNCCOM_GET_ECHO_CANCEL:
-            asynccom_get_echo_cancel(port, (unsigned *)arg);
+            asynccom_get_echo_cancel(port, &tmp_unsigned);
+            error_code = copy_to_user((void*)arg, &tmp_unsigned, sizeof(tmp_unsigned));
             break;
         case IOCTL_ASYNCCOM_SET_SAMPLE_RATE:
-            asynccom_set_sample_rate(port, (unsigned)arg);
+            tmp_unsigned = (unsigned int)arg;
+            asynccom_set_sample_rate(port, tmp_unsigned);
             break;
         case IOCTL_ASYNCCOM_GET_SAMPLE_RATE:
-            asynccom_get_sample_rate(port, (unsigned *)arg);
+            asynccom_get_sample_rate(port, &tmp_unsigned);
+            error_code = copy_to_user((void*)arg, &tmp_unsigned, sizeof(tmp_unsigned));
             break;
         case IOCTL_ASYNCCOM_SET_TX_TRIGGER:
-            asynccom_set_tx_trigger(port, (unsigned)arg);
+            tmp_unsigned = (unsigned int)arg;
+            asynccom_set_tx_trigger(port, tmp_unsigned);
             break;
         case IOCTL_ASYNCCOM_GET_TX_TRIGGER:
-            asynccom_get_tx_trigger(port, (unsigned *)arg);
+            asynccom_get_tx_trigger(port, &tmp_unsigned);
+            error_code = copy_to_user((void*)arg, &tmp_unsigned, sizeof(tmp_unsigned));
             break;
         case IOCTL_ASYNCCOM_SET_RX_TRIGGER:
-            asynccom_set_rx_trigger(port, (unsigned)arg);
+            tmp_unsigned = (unsigned int)arg;
+            asynccom_set_rx_trigger(port, tmp_unsigned);
             break;
         case IOCTL_ASYNCCOM_GET_RX_TRIGGER:
-            asynccom_get_rx_trigger(port, (unsigned *)arg);
+            asynccom_get_rx_trigger(port, &tmp_unsigned);
+            error_code = copy_to_user((void*)arg, &tmp_unsigned, sizeof(tmp_unsigned));
             break;
         case IOCTL_ASYNCCOM_SET_CLOCK_RATE:
             //asynccom_set_clock_rate(port, (unsigned)arg);
             error_code = -EPROTONOSUPPORT;
             break;
         case IOCTL_ASYNCCOM_SET_CLOCK_BITS:
-            asynccom_port_set_clock_bits(port, (void *)arg);
+		        error_code = copy_from_user(tmp_clock_bits, (unsigned char *)arg, 20);
+            if(!error_code) asynccom_port_set_clock_bits(port, tmp_clock_bits);
             break;
         case IOCTL_ASYNCCOM_ENABLE_ISOCHRONOUS:
             asynccom_enable_isochronous(port, (unsigned)arg);
@@ -499,7 +511,8 @@ static int asynccom_ioctl(struct tty_struct *tty, struct file *file, unsigned in
             asynccom_disable_isochronous(port);
             break;
         case IOCTL_ASYNCCOM_GET_ISOCHRONOUS:
-            asynccom_get_isochronous(port, (int *)arg);
+            asynccom_get_isochronous(port, &tmp_int);
+            error_code = copy_to_user((void*)arg, &tmp_int, sizeof(tmp_int));
             break;
         case IOCTL_ASYNCCOM_ENABLE_EXTERNAL_TRANSMIT:
             asynccom_set_external_transmit(port, (unsigned)arg);
@@ -508,13 +521,16 @@ static int asynccom_ioctl(struct tty_struct *tty, struct file *file, unsigned in
             asynccom_set_external_transmit(port, 0);
             break;
         case IOCTL_ASYNCCOM_GET_EXTERNAL_TRANSMIT:
-            asynccom_get_external_transmit(port, (unsigned *)arg);
+            asynccom_get_external_transmit(port, &tmp_unsigned);
+            error_code = copy_to_user((void*)arg, &tmp_unsigned, sizeof(tmp_unsigned));
             break;
         case IOCTL_ASYNCCOM_SET_FRAME_LENGTH:
-            asynccom_set_frame_length(port, (unsigned)arg);
+            tmp_unsigned = (unsigned)arg;
+            asynccom_set_frame_length(port, tmp_unsigned);
             break;
         case IOCTL_ASYNCCOM_GET_FRAME_LENGTH:
-            asynccom_get_frame_length(port, (unsigned *)arg);
+            asynccom_get_frame_length(port, &tmp_unsigned);
+            error_code = copy_to_user((void*)arg, &tmp_unsigned, sizeof(tmp_unsigned));
             break;
         case IOCTL_ASYNCCOM_ENABLE_9BIT:
             //asynccom_enable_9bit(port);
@@ -529,10 +545,12 @@ static int asynccom_ioctl(struct tty_struct *tty, struct file *file, unsigned in
             error_code = -EPROTONOSUPPORT;
             break;
         case IOCTL_ASYNCCOM_SET_LINE_CNTL:
-            set_register(port, UART_LCR, (unsigned)arg);
+            tmp_unsigned = (unsigned)arg;
+            set_register(port, UART_LCR, tmp_unsigned);
             break;
         case IOCTL_ASYNCCOM_SET_DIVISOR:
-            asynccom_set_divisor(port,(unsigned)arg);
+            tmp_unsigned = (unsigned)arg;
+            asynccom_set_divisor(port, tmp_unsigned);
             break;
         case IOCTL_ASYNCCOM_ENABLE_FIXED_BAUD_RATE:
         case IOCTL_ASYNCCOM_DISABLE_FIXED_BAUD_RATE:
@@ -732,7 +750,7 @@ void asynccom_enable_isochronous(struct usb_serial_port *port, int mode)
     set_register(port, UART_LCR, 0);
 
     switch (mode) {
-    /* turn isochronous off */	
+    /* turn isochronous off */
     case -1:
         new_cks |= 0x00;
         new_mdm |= 0x00;

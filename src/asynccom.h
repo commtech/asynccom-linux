@@ -21,6 +21,8 @@
 #ifndef ASYNCCOM_H
 #define ASYNCCOM_H
 
+#define DEVICE_NAME "asynccom"
+
 #define COMMTECH_VENDOR_ID 0x2eb0
 
 #define SYSFS_READ_WRITE_MODE 0660
@@ -99,6 +101,13 @@ struct ioctl_get_dev_info_struct {
       short device;       /* device ID */
       unsigned char bus;  /* PCI bus number */
       unsigned char slot; /* slot number */
+};
+
+struct asynccom_port {
+	int sample_rate;
+	int baud_rate;
+	int clock_rate;
+	int ACR;
 };
 
 #include <linux/fs.h>

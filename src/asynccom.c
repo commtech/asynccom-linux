@@ -33,12 +33,6 @@
 
 struct attribute_group port_settings_attr_group;
 
-struct asynccom_private {
-    int sample_rate;
-    int ACR;
-};
-
-
 static const struct usb_device_id fastcom_id_table[] = {
     { USB_DEVICE(COMMTECH_VENDOR_ID, 0x0031) },
     { }
@@ -192,8 +186,15 @@ int  asynccom_write(struct tty_struct *tty, struct usb_serial_port *port, const 
 
 static int asynccom_port_probe(struct usb_serial_port *port)
 {
-    unsigned char clock_bits[20] = BAUD9600;
+	unsigned char clock_bits[20] = BAUD9600;
+	struct asynccom_port *async_port = 0;
 
+	async_port = kmalloc(sizeof(*async_port), GFP_KERNEL);
+	if (async_port == NULL) {
+		printk(KERN_ERR DEVICE_NAME "kmalloc failed\n");
+		return 0;
+	}
+	usb_set_serial_port_data(port, async_port);
     //(sysfs_create_group(&port->dev.kobj, &port_settings_attr_group));
 
     set_register(port, 0x0004, 0x01);
@@ -643,10 +644,10 @@ void asynccom_get_echo_cancel(struct usb_serial_port *port, int *enabled)
 
 void asynccom_set_sample_rate(struct usb_serial_port *port, unsigned val)
 {
-    struct asynccom_private *priv;
+    struct asynccom_port *async_port = 0;
     unsigned char orig_lcr;
 
-    priv = usb_get_serial_port_data(port);
+    async_port = usb_get_serial_port_data(port);
 
     orig_lcr = get_register(port, UART_LCR);
     set_register(port, UART_LCR, 0);
@@ -654,22 +655,23 @@ void asynccom_set_sample_rate(struct usb_serial_port *port, unsigned val)
     set_register(port, ICR_OFFSET, val);
     set_register(port, UART_LCR, orig_lcr);
 
-    //priv->sample_rate = val;
+    async_port->sample_rate = val;
 }
 
 void asynccom_get_sample_rate(struct usb_serial_port *port, unsigned *val)
 {
-    struct asynccom_private *priv;
-    priv = usb_get_serial_port_data(port);
-    //*val = priv->sample_rate;
+	struct asynccom_port *async_port = 0;
+
+    async_port = usb_get_serial_port_data(port);
+    *val = async_port->sample_rate;
 }
 
 void asynccom_set_tx_trigger(struct usb_serial_port *port, unsigned val)
 {
     unsigned char orig_lcr;
-    struct asynccom_private *priv;
+	struct asynccom_port *async_port = 0;
 
-    priv = usb_get_serial_port_data(port);
+    async_port = usb_get_serial_port_data(port);
 
     orig_lcr = get_register(port, UART_LCR);
     set_register(port, UART_LCR, 0);
@@ -701,9 +703,9 @@ void asynccom_get_tx_trigger(struct usb_serial_port *port, unsigned *val)
 void asynccom_set_rx_trigger(struct usb_serial_port *port, unsigned val)
 {
     unsigned char orig_lcr;
-    struct asynccom_private *priv;
+	struct asynccom_port *async_port = 0;
 
-    priv = usb_get_serial_port_data(port);
+    async_port = usb_get_serial_port_data(port);
 
     orig_lcr = get_register(port, UART_LCR);
     set_register(port, UART_LCR, 0);

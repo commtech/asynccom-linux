@@ -107,6 +107,7 @@ struct asynccom_port {
 	int sample_rate;
 	int baud_rate;
 	int clock_rate;
+	int custom_divisor;
 	int ACR;
 };
 

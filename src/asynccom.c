@@ -69,9 +69,6 @@ static struct usb_serial_driver asynccom_device = {
     //.process_read_urb = asynccom_process_urb,
 };
 
-
-
-
 static struct usb_serial_driver * const serial_drivers[] = {
     &asynccom_device,
     NULL
@@ -210,8 +207,7 @@ static int asynccom_port_probe(struct usb_serial_port *port)
     set_register(port, 0x0040, 0x01000000);
 
     asynccom_port_set_clock_bits(port, clock_bits);
-
-    //printk("%x\n", port->bulk_in_endpointAddress);
+	asynccom_set_sample_rate(port, 16);
     port->read_urb->complete = asynccom_read_callback;
     return 0;
 }
@@ -360,11 +356,6 @@ rate using calculate_clock_bits.
 #define STRB_BASE 0x00000008
 #define DTA_BASE 0x00000001
 #define CLK_BASE 0x00000002
-#define DEVICE_NAME "asynccom"
-
-
-
-
 
 void asynccom_port_set_clock_bits(struct usb_serial_port *port, unsigned char *clock_data)
 {
@@ -498,7 +489,6 @@ static int asynccom_ioctl(struct tty_struct *tty, struct file *file, unsigned in
             error_code = copy_to_user((void*)arg, &tmp_unsigned, sizeof(tmp_unsigned));
             break;
         case IOCTL_ASYNCCOM_SET_CLOCK_RATE:
-            //asynccom_set_clock_rate(port, (unsigned)arg);
             error_code = -EPROTONOSUPPORT;
             break;
         case IOCTL_ASYNCCOM_SET_CLOCK_BITS:
@@ -534,15 +524,8 @@ static int asynccom_ioctl(struct tty_struct *tty, struct file *file, unsigned in
             error_code = copy_to_user((void*)arg, &tmp_unsigned, sizeof(tmp_unsigned));
             break;
         case IOCTL_ASYNCCOM_ENABLE_9BIT:
-            //asynccom_enable_9bit(port);
-            error_code = -EPROTONOSUPPORT;
-            break;
         case IOCTL_ASYNCCOM_DISABLE_9BIT:
-            //asynccom_disable_9bit(port);
-            error_code = -EPROTONOSUPPORT;
-            break;
         case IOCTL_ASYNCCOM_GET_9BIT:
-            //asynccom_get_9bit(port, (unsigned *)arg);
             error_code = -EPROTONOSUPPORT;
             break;
         case IOCTL_ASYNCCOM_SET_LINE_CNTL:
@@ -576,11 +559,16 @@ static int asynccom_ioctl(struct tty_struct *tty, struct file *file, unsigned in
 void asynccom_set_divisor(struct usb_serial_port *port, int divisor)
 {
     unsigned char orig_lcr;
+    struct asynccom_port *async_port = 0;
+
+    async_port = usb_get_serial_port_data(port);
 
     orig_lcr = get_register(port, UART_LCR);
     set_register(port, UART_LCR, (orig_lcr | 0x80)); //set divisor latch allowing access to DLL and DLM registers
     set_register(port, UART_DLL, divisor);
     set_register(port, UART_LCR, orig_lcr);
+    
+    async_port->custom_divisor = divisor;
 }
 
 void asynccom_set_rs485(struct usb_serial_port *port, int enable)

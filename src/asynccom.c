@@ -213,10 +213,10 @@ static int asynccom_port_probe(struct usb_serial_port *port)
 }
 
 
-static int asynccom_port_remove(struct usb_serial_port *port)
+static void asynccom_port_remove(struct usb_serial_port *port)
 {
     usb_kill_urb(port->read_urb);
-    return 0;
+    //return 0;
 }
 
 
@@ -234,7 +234,7 @@ void asynccom_read(struct usb_serial_port *port)
 }
 
 
-static void asynccom_set_termios(struct tty_struct *tty, struct usb_serial_port *port, struct ktermios *old_termios)
+static void asynccom_set_termios(struct tty_struct *tty, struct usb_serial_port *port, const struct ktermios *old_termios)
 {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 7, 0)
     struct ktermios *termios = &tty->termios;
@@ -270,7 +270,7 @@ static void asynccom_set_termios(struct tty_struct *tty, struct usb_serial_port 
 
     if(cflag & CMSPAR) urb_value |= 0x20;
 
-    set_register(port, UART_LCR, urb_value);
+    set_register(port, ASYNCCOM_LCR, urb_value);
 
     /* Baud rate*/
     //switch (cflag & CBAUD)
@@ -279,18 +279,18 @@ static void asynccom_set_termios(struct tty_struct *tty, struct usb_serial_port 
     /* Flow control */
     if(cflag & CRTSCTS)
     {
-        orig_lcr = get_register(port, UART_LCR);
-        set_register(port, UART_LCR, 0xbf);
-        set_register(port, UART_EFR, 0xD0);
-        set_register(port, UART_LCR, orig_lcr);
+        orig_lcr = get_register(port, ASYNCCOM_LCR);
+        set_register(port, ASYNCCOM_LCR, 0xbf);
+        set_register(port, ASYNCCOM_EFR, 0xD0);
+        set_register(port, ASYNCCOM_LCR, orig_lcr);
     }
 
     if(!(cflag & CRTSCTS))
     {
-        orig_lcr = get_register(port, UART_LCR);
-        set_register(port, UART_LCR, 0xbf);
-        set_register(port, UART_EFR, 0x00);
-        set_register(port, UART_LCR, orig_lcr);
+        orig_lcr = get_register(port, ASYNCCOM_LCR);
+        set_register(port, ASYNCCOM_LCR, 0xbf);
+        set_register(port, ASYNCCOM_EFR, 0x00);
+        set_register(port, ASYNCCOM_LCR, orig_lcr);
     }
 }
 
@@ -530,7 +530,7 @@ static int asynccom_ioctl(struct tty_struct *tty, struct file *file, unsigned in
             break;
         case IOCTL_ASYNCCOM_SET_LINE_CNTL:
             tmp_unsigned = (unsigned)arg;
-            set_register(port, UART_LCR, tmp_unsigned);
+            set_register(port, ASYNCCOM_LCR, tmp_unsigned);
             break;
         case IOCTL_ASYNCCOM_SET_DIVISOR:
             tmp_unsigned = (unsigned)arg;
@@ -563,10 +563,10 @@ void asynccom_set_divisor(struct usb_serial_port *port, int divisor)
 
     async_port = usb_get_serial_port_data(port);
 
-    orig_lcr = get_register(port, UART_LCR);
-    set_register(port, UART_LCR, (orig_lcr | 0x80)); //set divisor latch allowing access to DLL and DLM registers
-    set_register(port, UART_DLL, divisor);
-    set_register(port, UART_LCR, orig_lcr);
+    orig_lcr = get_register(port, ASYNCCOM_LCR);
+    set_register(port, ASYNCCOM_LCR, (orig_lcr | 0x80)); //set divisor latch allowing access to DLL and DLM registers
+    set_register(port, ASYNCCOM_DLL, divisor);
+    set_register(port, ASYNCCOM_LCR, orig_lcr);
     
     async_port->custom_divisor = divisor;
 }
@@ -577,11 +577,11 @@ void asynccom_set_rs485(struct usb_serial_port *port, int enable)
     __u32 orig_fcr;
     int ACR;
 
-    orig_lcr = get_register(port, UART_LCR);
+    orig_lcr = get_register(port, ASYNCCOM_LCR);
     orig_fcr = get_register(port, FPGA_FCR);
 
-    set_register(port, UART_LCR, 0); /* Ensure last LCR value is not 0xbf */
-    set_register(port, UART_SPR, ACR_OFFSET); /* To allow access to ACR */
+    set_register(port, ASYNCCOM_LCR, 0); /* Ensure last LCR value is not 0xbf */
+    set_register(port, ASYNCCOM_SPR, ACR_OFFSET); /* To allow access to ACR */
 
     ACR = get_register(port, ACR_OFFSET);
 
@@ -595,7 +595,7 @@ void asynccom_set_rs485(struct usb_serial_port *port, int enable)
     }
 
     set_register(port, ICR_OFFSET, ACR);
-    set_register(port, UART_LCR, orig_lcr);
+    set_register(port, ASYNCCOM_LCR, orig_lcr);
 }
 
 void asynccom_get_rs485(struct usb_serial_port *port, int *enabled)
@@ -637,11 +637,11 @@ void asynccom_set_sample_rate(struct usb_serial_port *port, unsigned val)
 
     async_port = usb_get_serial_port_data(port);
 
-    orig_lcr = get_register(port, UART_LCR);
-    set_register(port, UART_LCR, 0);
-    set_register(port, UART_SPR, TCR_OFFSET);
+    orig_lcr = get_register(port, ASYNCCOM_LCR);
+    set_register(port, ASYNCCOM_LCR, 0);
+    set_register(port, ASYNCCOM_SPR, TCR_OFFSET);
     set_register(port, ICR_OFFSET, val);
-    set_register(port, UART_LCR, orig_lcr);
+    set_register(port, ASYNCCOM_LCR, orig_lcr);
 
     async_port->sample_rate = val;
 }
@@ -661,11 +661,11 @@ void asynccom_set_tx_trigger(struct usb_serial_port *port, unsigned val)
 
     async_port = usb_get_serial_port_data(port);
 
-    orig_lcr = get_register(port, UART_LCR);
-    set_register(port, UART_LCR, 0);
-    set_register(port, UART_SPR, TTL_OFFSET);
+    orig_lcr = get_register(port, ASYNCCOM_LCR);
+    set_register(port, ASYNCCOM_LCR, 0);
+    set_register(port, ASYNCCOM_SPR, TTL_OFFSET);
     set_register(port, ICR_OFFSET, val);
-    set_register(port, UART_LCR, orig_lcr);
+    set_register(port, ASYNCCOM_LCR, orig_lcr);
 }
 
 void asynccom_get_tx_trigger(struct usb_serial_port *port, unsigned *val)
@@ -675,17 +675,17 @@ void asynccom_get_tx_trigger(struct usb_serial_port *port, unsigned *val)
     int ACR;
 
     ACR = get_register(port, ACR_OFFSET);
-    orig_lcr = get_register(port, UART_LCR);
-    set_register(port, UART_LCR, 0);
-    set_register(port, UART_SPR, ACR_OFFSET);
+    orig_lcr = get_register(port, ASYNCCOM_LCR);
+    set_register(port, ASYNCCOM_LCR, 0);
+    set_register(port, ASYNCCOM_SPR, ACR_OFFSET);
     set_register(port, ICR_OFFSET, ACR | 0x40);
-    set_register(port, UART_SPR, TTL_OFFSET);
+    set_register(port, ASYNCCOM_SPR, TTL_OFFSET);
 
     ttl = get_register(port, ICR_OFFSET);
     *val = ttl & 0x7F;
-    set_register(port, UART_SPR, ACR_OFFSET);
+    set_register(port, ASYNCCOM_SPR, ACR_OFFSET);
     set_register(port, ICR_OFFSET, ACR);
-    set_register(port, UART_LCR, orig_lcr);
+    set_register(port, ASYNCCOM_LCR, orig_lcr);
 }
 
 void asynccom_set_rx_trigger(struct usb_serial_port *port, unsigned val)
@@ -695,11 +695,11 @@ void asynccom_set_rx_trigger(struct usb_serial_port *port, unsigned val)
 
     async_port = usb_get_serial_port_data(port);
 
-    orig_lcr = get_register(port, UART_LCR);
-    set_register(port, UART_LCR, 0);
-    set_register(port, UART_SPR, RTL_OFFSET);
+    orig_lcr = get_register(port, ASYNCCOM_LCR);
+    set_register(port, ASYNCCOM_LCR, 0);
+    set_register(port, ASYNCCOM_SPR, RTL_OFFSET);
     set_register(port, ICR_OFFSET, val);
-    set_register(port, UART_LCR, orig_lcr);
+    set_register(port, ASYNCCOM_LCR, orig_lcr);
 }
 
 void asynccom_get_rx_trigger(struct usb_serial_port *port, unsigned *val)
@@ -709,17 +709,17 @@ void asynccom_get_rx_trigger(struct usb_serial_port *port, unsigned *val)
     int ACR;
 
     ACR = get_register(port, ACR_OFFSET);
-    orig_lcr = get_register(port, UART_LCR);
-    set_register(port, UART_LCR, 0);
-    set_register(port, UART_SPR, ACR_OFFSET);
+    orig_lcr = get_register(port, ASYNCCOM_LCR);
+    set_register(port, ASYNCCOM_LCR, 0);
+    set_register(port, ASYNCCOM_SPR, ACR_OFFSET);
     set_register(port, ICR_OFFSET, ACR | 0x40);
-    set_register(port, UART_SPR, RTL_OFFSET);
+    set_register(port, ASYNCCOM_SPR, RTL_OFFSET);
 
     rtl = get_register(port, ICR_OFFSET);
     *val = rtl & 0x7F;
-    set_register(port, UART_SPR, ACR_OFFSET);
+    set_register(port, ASYNCCOM_SPR, ACR_OFFSET);
     set_register(port, ICR_OFFSET, ACR);
-    set_register(port, UART_LCR, orig_lcr);
+    set_register(port, ASYNCCOM_LCR, orig_lcr);
 }
 
 void asynccom_disable_isochronous(struct usb_serial_port *port)
@@ -735,9 +735,9 @@ void asynccom_enable_isochronous(struct usb_serial_port *port, int mode)
     unsigned char new_mdm = 0;
 
 
-    orig_lcr = get_register(port, UART_LCR);
+    orig_lcr = get_register(port, ASYNCCOM_LCR);
 
-    set_register(port, UART_LCR, 0);
+    set_register(port, ASYNCCOM_LCR, 0);
 
     switch (mode) {
     /* turn isochronous off */
@@ -787,11 +787,11 @@ void asynccom_enable_isochronous(struct usb_serial_port *port, int mode)
         break;
     }
 
-    set_register(port, UART_SPR, MDM_OFFSET);
+    set_register(port, ASYNCCOM_SPR, MDM_OFFSET);
     set_register(port, ICR_OFFSET, new_mdm);
-    set_register(port, UART_SPR, CKS_OFFSET);
+    set_register(port, ASYNCCOM_SPR, CKS_OFFSET);
     set_register(port, ICR_OFFSET, new_cks);
-    set_register(port, UART_LCR, orig_lcr);
+    set_register(port, ASYNCCOM_LCR, orig_lcr);
 
 }
 
@@ -802,9 +802,9 @@ void asynccom_get_isochronous(struct usb_serial_port *port, int *mode)
     int ACR;
 
     ACR = get_register(port, ACR_OFFSET);
-    orig_lcr = get_register(port, UART_LCR);
+    orig_lcr = get_register(port, ASYNCCOM_LCR);
 
-    set_register(port, UART_LCR, 0);
+    set_register(port, ASYNCCOM_LCR, 0);
     set_register(port, SPR_OFFSET, ACR_OFFSET);
     set_register(port, ICR_OFFSET, ACR | 0x40);
     set_register(port, SPR_OFFSET, CKS_OFFSET);
@@ -853,7 +853,7 @@ void asynccom_get_isochronous(struct usb_serial_port *port, int *mode)
 
     set_register(port, SPR_OFFSET, ACR_OFFSET);
     set_register(port, ICR_OFFSET, ACR_OFFSET);
-    set_register(port, UART_LCR, orig_lcr);
+    set_register(port, ASYNCCOM_LCR, orig_lcr);
 
 }
 
@@ -863,24 +863,24 @@ int asynccom_set_external_transmit(struct usb_serial_port *port, unsigned num_ch
 
     if (num_chars > 8191) return -EINVAL;
 
-    orig_lcr = get_register(port, UART_LCR);
-    set_register(port, UART_LCR, 0); /* Ensure last LCR value is not 0xbf */
+    orig_lcr = get_register(port, ASYNCCOM_LCR);
+    set_register(port, ASYNCCOM_LCR, 0); /* Ensure last LCR value is not 0xbf */
 
 
     if (num_chars != 0) {
-        set_register(port, UART_SPR, EXTH_OFFSET);
+        set_register(port, ASYNCCOM_SPR, EXTH_OFFSET);
         set_register(port, ICR_OFFSET, 0x80 | (num_chars >> 8));
-        set_register(port, UART_SPR, EXT_OFFSET);
+        set_register(port, ASYNCCOM_SPR, EXT_OFFSET);
         set_register(port, ICR_OFFSET, (char)num_chars);
     }
     else {
-        set_register(port, UART_SPR, EXTH_OFFSET);
+        set_register(port, ASYNCCOM_SPR, EXTH_OFFSET);
         set_register(port, ICR_OFFSET, 0x00);
-        set_register(port, UART_SPR, EXT_OFFSET);
+        set_register(port, ASYNCCOM_SPR, EXT_OFFSET);
         set_register(port, ICR_OFFSET, 0x00);
     }
 
-    set_register(port, UART_LCR, orig_lcr);
+    set_register(port, ASYNCCOM_LCR, orig_lcr);
 
     return 0;
 }
@@ -892,21 +892,21 @@ void asynccom_get_external_transmit(struct usb_serial_port *port, unsigned *num_
     int ACR;
 
     ACR = get_register(port, ACR_OFFSET);
-    orig_lcr = get_register(port, UART_LCR);
+    orig_lcr = get_register(port, ASYNCCOM_LCR);
 
-    set_register(port, UART_LCR, 0); /* Ensure last LCR value is not 0xbf */
-    set_register(port, UART_SPR, ACR_OFFSET);
+    set_register(port, ASYNCCOM_LCR, 0); /* Ensure last LCR value is not 0xbf */
+    set_register(port, ASYNCCOM_SPR, ACR_OFFSET);
     set_register(port, ICR_OFFSET, ACR | 0x40);
-    set_register(port, UART_SPR, EXT_OFFSET);
+    set_register(port, ASYNCCOM_SPR, EXT_OFFSET);
     ext = get_register(port, ICR_OFFSET);
-    set_register(port, UART_SPR, EXTH_OFFSET);
+    set_register(port, ASYNCCOM_SPR, EXTH_OFFSET);
     exth = get_register(port, ICR_OFFSET);
 
     *num_chars = ((exth & 0x1F) << 8) + ext;
 
-    set_register(port, UART_SPR, ACR_OFFSET);
+    set_register(port, ASYNCCOM_SPR, ACR_OFFSET);
     set_register(port, ICR_OFFSET, ACR);
-    set_register(port, UART_LCR, orig_lcr);
+    set_register(port, ASYNCCOM_LCR, orig_lcr);
 
 }
 
@@ -916,13 +916,13 @@ int asynccom_set_frame_length(struct usb_serial_port *port, unsigned num_chars)
 
     if (num_chars == 0 || num_chars > 256) return -EINVAL;
 
-    orig_lcr = get_register(port, UART_LCR);
-    set_register(port, UART_LCR, 0); /* Ensure last LCR value is not 0xbf */
+    orig_lcr = get_register(port, ASYNCCOM_LCR);
+    set_register(port, ASYNCCOM_LCR, 0); /* Ensure last LCR value is not 0xbf */
 
-    set_register(port, UART_SPR, FLR_OFFSET);
+    set_register(port, ASYNCCOM_SPR, FLR_OFFSET);
     set_register(port, ICR_OFFSET, num_chars - 1);
 
-    set_register(port, UART_LCR, orig_lcr);
+    set_register(port, ASYNCCOM_LCR, orig_lcr);
 
     return 0;
 }
@@ -935,20 +935,20 @@ int asynccom_get_frame_length(struct usb_serial_port *port, unsigned *num_chars)
 
     ACR = get_register(port, ACR_OFFSET);
 
-    orig_lcr = get_register(port, UART_LCR);
+    orig_lcr = get_register(port, ASYNCCOM_LCR);
 
-    set_register(port, UART_LCR, 0); /* Ensure last LCR value is not 0xbf */
-    set_register(port, UART_SPR, ACR_OFFSET);
+    set_register(port, ASYNCCOM_LCR, 0); /* Ensure last LCR value is not 0xbf */
+    set_register(port, ASYNCCOM_SPR, ACR_OFFSET);
     set_register(port, ICR_OFFSET, ACR | 0x40);
 
-    set_register(port, UART_SPR, FLR_OFFSET);
+    set_register(port, ASYNCCOM_SPR, FLR_OFFSET);
     flr = get_register(port, ICR_OFFSET);
 
     *num_chars = flr + 1;
 
-    set_register(port, UART_SPR, ACR_OFFSET);
+    set_register(port, ASYNCCOM_SPR, ACR_OFFSET);
     set_register(port, ICR_OFFSET, ACR);
-    set_register(port, UART_LCR, orig_lcr);
+    set_register(port, ASYNCCOM_LCR, orig_lcr);
 
     return 0;
 }

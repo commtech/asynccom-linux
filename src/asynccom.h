@@ -32,20 +32,20 @@
 #define BAUD230400   {0x32, 0x0, 0xb, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x82, 0x62, 0x47, 0x1, 0x84, 0x0, 0xff, 0xff, 0xff}
 
 //16C950 register addresses
-#define UART_FCR 0x4004
-#define UART_ISR 0x4004
-#define UART_LCR 0x4006
-#define UART_MCR 0x4008
-#define UART_LSR 0x400A
-#define UART_MSR 0x400C
-#define UART_SPR 0x400E
+#define ASYNCCOM_FCR 0x4004
+#define ASYNCCOM_ISR 0x4004
+#define ASYNCCOM_LCR 0x4006 // Actually in use
+#define ASYNCCOM_MCR 0x4008
+#define ASYNCCOM_LSR 0x400A
+#define ASYNCCOM_MSR 0x400C
+#define ASYNCCOM_SPR 0x400E // Actually in use
 
 //16C950 extended registers when LCR 0xBF
-#define UART_DLL 0x4000
-#define UART_DLM 0x4002
-#define UART_EFR 0x4004
-#define UART_XON 0x4008
-#define UART_XOFF 0x400C
+#define ASYNCCOM_DLL 0x4000 // Actually in use
+#define ASYNCCOM_DLM 0x4002
+#define ASYNCCOM_EFR 0x4004 // Actually in use
+#define ASYNCCOM_XON 0x4008
+#define ASYNCCOM_XOFF 0x400C
 
 //F-CORE register addresses
 #define FPGA_FCR 0x0040
@@ -183,17 +183,15 @@ int  asynccom_write(struct tty_struct *tty, struct usb_serial_port *port, const 
 //static int asynccom_probe(struct usb_interface *interface, const struct usb_device_id *id);
 
 static int asynccom_port_probe(struct usb_serial_port *port);
-static int asynccom_port_remove(struct usb_serial_port *port);
+static void asynccom_port_remove(struct usb_serial_port *port);
 
 void asynccom_set_divisor(struct usb_serial_port *port, int divisor);
-
 int asynccom_open(struct tty_struct *tty, struct usb_serial_port *port);
-
 void asynccom_read(struct usb_serial_port *port);
-
+int asynccom_close(struct tty_struct *tty, struct usb_serial_port *port);
 //static void asynccom_process_urb(struct urb *urb);
 
-static void asynccom_set_termios(struct tty_struct *tty, struct usb_serial_port *port, struct ktermios *old_termios);
+static void asynccom_set_termios(struct tty_struct *tty, struct usb_serial_port *port, const struct ktermios *old_termios);
 
 //void asynccom_set_baud_rate(struct usb_serial_port *port, int baud_rate);
 
